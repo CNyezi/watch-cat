@@ -1,0 +1,282 @@
+{{define "exec_stream"}}
+{{/*
+    SSE execution progress component.
+    Placed inside #exec-progress container in plans/detail.html.
+    Data: .PlanID
+
+    SSE events from /plans/:id/exec/stream:
+      - step-start:  {"step_id":"...","step_name":"...","step_type":"http","seq":1}
+      - step-result: {"step_id":"...","step_name":"...","step_type":"http","seq":1,"status":"success","duration":"120ms","error":""}
+      - done:        {"status":"success","duration":"1.5s","total_steps":3,"passed":3,"failed":0}
+      - error:       {"message":"..."}
+*/}}
+<div x-data="execStream('{{.PlanID}}')" x-init="connect()" @beforeunload.window="disconnect()">
+
+    <!-- Progress Header -->
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            <template x-if="!done">
+                <svg class="h-4 w-4 animate-spin text-indigo-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            </template>
+            <template x-if="done && finalStatus === 'success'">
+                <svg class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </template>
+            <template x-if="done && finalStatus !== 'success'">
+                <svg class="h-4 w-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                </svg>
+            </template>
+            <span class="text-sm font-medium"
+                  :class="done ? (finalStatus === 'success' ? 'text-emerald-300' : 'text-rose-300') : 'text-indigo-300'"
+                  x-text="statusText"></span>
+        </div>
+        <span class="text-xs text-slate-400 font-mono" x-show="elapsed" x-text="elapsed"></span>
+    </div>
+
+    <!-- Progress Bar -->
+    <div x-show="totalSteps > 0" class="mb-3">
+        <div class="flex items-center justify-between mb-1">
+            <span class="text-xs text-slate-400" x-text="completedSteps + ' / ' + totalSteps + ' 步'"></span>
+            <span class="text-xs font-medium" :class="failedSteps > 0 ? 'text-rose-400' : 'text-emerald-400'"
+                  x-show="done"
+                  x-text="failedSteps > 0 ? failedSteps + ' 个失败' : '全部通过'"></span>
+        </div>
+        <div class="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-300"
+                 :class="failedSteps > 0 ? 'bg-rose-500' : 'bg-emerald-500'"
+                 :style="'width: ' + (totalSteps > 0 ? (completedSteps / totalSteps * 100) : 0) + '%'"></div>
+        </div>
+    </div>
+
+    <!-- Step Results -->
+    <div class="space-y-1.5 max-h-64 overflow-y-auto" id="exec-step-results">
+        <template x-for="step in steps" :key="step.step_id + '-' + step.state">
+            <div class="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-all"
+                 :class="step.state === 'running' ? 'bg-indigo-500/5 ring-1 ring-indigo-500/20'
+                       : step.status === 'success' ? 'bg-slate-800 ring-1 ring-slate-700'
+                       : step.status === 'failed' ? 'bg-rose-500/5 ring-1 ring-rose-500/20'
+                       : step.status === 'timeout' ? 'bg-amber-500/5 ring-1 ring-amber-500/20'
+                       : 'bg-slate-800 ring-1 ring-slate-700'">
+
+                <!-- Step Number -->
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-400 shrink-0"
+                      x-text="step.seq"></span>
+
+                <!-- Type Icon -->
+                <span class="shrink-0 text-xs font-medium px-1.5 py-0.5 rounded"
+                      :class="step.step_type === 'http' ? 'bg-indigo-500/10 text-indigo-400'
+                            : step.step_type === 'ws' ? 'bg-emerald-500/10 text-emerald-400'
+                            : 'bg-slate-700 text-slate-400'"
+                      x-text="step.step_type.toUpperCase()"></span>
+
+                <!-- Name -->
+                <span class="flex-1 text-slate-200 truncate" x-text="step.step_name"></span>
+
+                <!-- Status -->
+                <template x-if="step.state === 'running'">
+                    <svg class="h-4 w-4 animate-spin text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                </template>
+                <template x-if="step.state === 'done' && step.status === 'success'">
+                    <svg class="h-4 w-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                    </svg>
+                </template>
+                <template x-if="step.state === 'done' && step.status === 'failed'">
+                    <svg class="h-4 w-4 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </template>
+                <template x-if="step.state === 'done' && step.status === 'timeout'">
+                    <svg class="h-4 w-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                    </svg>
+                </template>
+
+                <!-- Duration -->
+                <span class="text-xs font-mono text-slate-500 shrink-0 w-16 text-right"
+                      x-text="step.duration || ''"></span>
+            </div>
+
+            <!-- Error message -->
+            <template x-if="step.error">
+                <div class="ml-8 rounded bg-rose-500/5 border border-rose-500/20 px-3 py-1.5 mt-1">
+                    <pre class="text-xs text-rose-400 whitespace-pre-wrap break-words font-mono" x-text="step.error"></pre>
+                </div>
+            </template>
+        </template>
+    </div>
+
+    <!-- Connection Error -->
+    <div x-show="connError" x-cloak class="mt-3 rounded-md bg-amber-500/5 border border-amber-500/20 px-3 py-2">
+        <div class="flex items-center gap-2">
+            <svg class="h-4 w-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+            </svg>
+            <span class="text-xs text-amber-300" x-text="connError"></span>
+        </div>
+    </div>
+
+    <!-- Done Summary -->
+    <div x-show="done" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-1"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="mt-3 rounded-md px-4 py-3"
+         :class="finalStatus === 'success' ? 'bg-emerald-500/5 border border-emerald-500/20' : 'bg-rose-500/5 border border-rose-500/20'">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-semibold"
+                   :class="finalStatus === 'success' ? 'text-emerald-300' : 'text-rose-300'"
+                   x-text="finalStatus === 'success' ? '执行成功完成' : '执行失败'"></p>
+                <p class="text-xs mt-0.5"
+                   :class="finalStatus === 'success' ? 'text-emerald-400' : 'text-rose-400'"
+                   x-text="completedSteps + ' 个步骤已完成，耗时 ' + elapsed"></p>
+            </div>
+            <a :href="'/plans/' + planId + '?tab=logs'"
+               class="text-xs font-medium underline"
+               :class="finalStatus === 'success' ? 'text-emerald-300' : 'text-rose-300'">
+                查看日志
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function execStream(planId) {
+    return {
+        planId: planId,
+        steps: [],
+        done: false,
+        finalStatus: '',
+        elapsed: '',
+        totalSteps: 0,
+        completedSteps: 0,
+        failedSteps: 0,
+        statusText: '正在启动执行...',
+        connError: '',
+        _source: null,
+
+        connect: function() {
+            var self = this;
+            this.connError = '';
+
+            var source = new EventSource('/plans/' + planId + '/exec/stream');
+            this._source = source;
+
+            source.addEventListener('step-start', function(e) {
+                try {
+                    var data = JSON.parse(e.data);
+                    // Add or update step as running
+                    var existing = self.steps.find(function(s) { return s.step_id === data.step_id; });
+                    if (existing) {
+                        existing.state = 'running';
+                    } else {
+                        self.steps.push({
+                            step_id: data.step_id,
+                            step_name: data.step_name,
+                            step_type: data.step_type,
+                            seq: data.seq,
+                            state: 'running',
+                            status: '',
+                            duration: '',
+                            error: ''
+                        });
+                        self.totalSteps = Math.max(self.totalSteps, data.seq);
+                    }
+                    self.statusText = '正在执行步骤 ' + data.seq + ': ' + data.step_name;
+                    self.scrollToBottom();
+                } catch(err) {}
+            });
+
+            source.addEventListener('step-result', function(e) {
+                try {
+                    var data = JSON.parse(e.data);
+                    var step = self.steps.find(function(s) { return s.step_id === data.step_id; });
+                    if (step) {
+                        step.state = 'done';
+                        step.status = data.status;
+                        step.duration = data.duration;
+                        step.error = data.error || '';
+                    } else {
+                        self.steps.push({
+                            step_id: data.step_id,
+                            step_name: data.step_name,
+                            step_type: data.step_type,
+                            seq: data.seq,
+                            state: 'done',
+                            status: data.status,
+                            duration: data.duration,
+                            error: data.error || ''
+                        });
+                    }
+                    self.completedSteps++;
+                    if (data.status === 'failed' || data.status === 'timeout') {
+                        self.failedSteps++;
+                    }
+                    self.statusText = '已完成步骤 ' + data.seq + ': ' + data.step_name;
+                    self.scrollToBottom();
+                } catch(err) {}
+            });
+
+            source.addEventListener('done', function(e) {
+                try {
+                    var data = JSON.parse(e.data);
+                    self.done = true;
+                    self.finalStatus = data.status;
+                    self.elapsed = data.duration;
+                    self.totalSteps = data.total_steps || self.totalSteps;
+                    self.completedSteps = self.totalSteps;
+                    self.statusText = data.status === 'success' ? '执行完成' : '执行失败';
+                } catch(err) {}
+                self.disconnect();
+            });
+
+            source.addEventListener('error', function(e) {
+                if (typeof e.data === 'string') {
+                    try {
+                        var data = JSON.parse(e.data);
+                        self.connError = data.message || '连接错误';
+                    } catch(err) {
+                        self.connError = '连接已断开';
+                    }
+                } else if (!self.done) {
+                    self.connError = '连接已断开，结果可能不完整。';
+                }
+                self.disconnect();
+            });
+
+            source.onerror = function() {
+                if (!self.done) {
+                    self.connError = 'SSE 连接已断开，请查看执行日志获取结果。';
+                }
+                self.disconnect();
+            };
+        },
+
+        disconnect: function() {
+            if (this._source) {
+                this._source.close();
+                this._source = null;
+            }
+        },
+
+        scrollToBottom: function() {
+            var container = document.getElementById('exec-step-results');
+            if (container) {
+                this.$nextTick(function() {
+                    container.scrollTop = container.scrollHeight;
+                });
+            }
+        }
+    };
+}
+</script>
+{{end}}

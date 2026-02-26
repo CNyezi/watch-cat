@@ -1,0 +1,141 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-100">错误汇总</h1>
+        <p class="mt-1 text-sm text-slate-400">查看和筛选所有计划的失败检测结果</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap items-end gap-3 rounded-lg bg-slate-800 px-4 py-3 shadow ring-1 ring-slate-700">
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">计划</label>
+            <select name="plan_id"
+                    hx-get="/errors"
+                    hx-target="#error-list"
+                    hx-swap="innerHTML"
+                    hx-include="[name='from'],[name='to']"
+                    hx-push-url="true"
+                    class="block rounded-md border-0 py-1.5 text-sm bg-slate-800 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                <option value="">所有计划</option>
+                {{range .Plans}}
+                <option value="{{.ID}}" {{if eq .ID $.Filters.PlanID}}selected{{end}}>{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">从</label>
+            <input type="datetime-local" name="from" value="{{.Filters.From}}"
+                   hx-get="/errors"
+                   hx-target="#error-list"
+                   hx-swap="innerHTML"
+                   hx-trigger="change"
+                   hx-include="[name='plan_id'],[name='to']"
+                   hx-push-url="true"
+                   class="block rounded-md border-0 py-1.5 text-sm bg-slate-800 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">到</label>
+            <input type="datetime-local" name="to" value="{{.Filters.To}}"
+                   hx-get="/errors"
+                   hx-target="#error-list"
+                   hx-swap="innerHTML"
+                   hx-trigger="change"
+                   hx-include="[name='plan_id'],[name='from']"
+                   hx-push-url="true"
+                   class="block rounded-md border-0 py-1.5 text-sm bg-slate-800 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+        </div>
+    </div>
+
+    <!-- Error List -->
+    <div id="error-list">
+        {{if .Logs}}
+        <div class="overflow-hidden rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+            <table class="min-w-full divide-y divide-slate-700">
+                <thead class="bg-slate-800/50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">时间</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">计划</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">状态</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">失败步骤</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">错误</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">耗时</th>
+                    </tr>
+                </thead>
+                    {{range .Logs}}
+                    <tbody x-data="{ expanded: false, loaded: false }" class="divide-y divide-slate-700">
+                    <tr class="hover:bg-slate-700/50 cursor-pointer"
+                        @click="expanded = !expanded; if (!loaded) { loaded = true; htmx.ajax('GET', '/plans/{{.PlanID}}/logs/{{.LogID}}', {target: '#alert-detail-{{.LogID}}', swap: 'innerHTML'}) }">
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-100">
+                            <div class="flex items-center gap-2">
+                                <svg class="h-4 w-4 text-slate-500 transition-transform" :class="expanded && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                                </svg>
+                                {{.StartedAt.Format "2006-01-02 15:04:05"}}
+                            </div>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-sm">
+                            <a href="/plans/{{.PlanID}}" class="text-indigo-400 hover:text-indigo-300 font-medium" @click.stop>{{.PlanName}}</a>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3">
+                            {{template "status_badge" dict "Status" .Status}}
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
+                            {{if .FailedStep}}{{.FailedStep}}{{else}}<span class="text-slate-600">-</span>{{end}}
+                        </td>
+                        <td class="px-4 py-3 text-sm max-w-sm">
+                            {{if .Error}}
+                            <span class="text-rose-400 truncate block">{{.Error}}</span>
+                            {{else}}
+                            <span class="text-slate-600">-</span>
+                            {{end}}
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{{.Duration}}</td>
+                    </tr>
+                    <tr x-show="expanded" x-cloak>
+                        <td colspan="6" class="px-4 py-4 bg-slate-800/50">
+                            <div id="alert-detail-{{.LogID}}">
+                                <div class="flex items-center justify-center py-4">
+                                    <svg class="h-5 w-5 animate-spin text-slate-500" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                    <span class="ml-2 text-sm text-slate-400">加载详情...</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                    {{end}}
+            </table>
+        </div>
+
+        <!-- Load More -->
+        {{if .HasMore}}
+        <div class="mt-4 flex justify-center">
+            <button hx-get="/errors?cursor={{.Cursor}}"
+                    hx-target="#error-list"
+                    hx-swap="innerHTML"
+                    hx-include="[name='plan_id'],[name='from'],[name='to']"
+                    class="inline-flex items-center rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-700/50">
+                加载更多
+                <svg class="ml-1.5 h-4 w-4 htmx-indicator animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            </button>
+        </div>
+        {{end}}
+
+        {{else}}
+        <div class="flex flex-col items-center justify-center rounded-lg bg-slate-800 py-16 shadow ring-1 ring-slate-700 text-center">
+            <svg class="mx-auto h-12 w-12 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h3 class="mt-4 text-sm font-semibold text-slate-100">一切正常</h3>
+            <p class="mt-1 text-sm text-slate-400">未发现失败的执行记录，一切运行正常。</p>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}

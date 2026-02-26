@@ -1,0 +1,85 @@
+{{define "confirm_modal"}}
+{{/*
+    Delete confirmation modal with name input.
+    Usage: {{template "confirm_modal" dict "ID" "delete-plan" "Title" "Delete Plan" "Desc" "This action cannot be undone." "ConfirmName" .Plan.Name "Action" "/plans/123" "Method" "delete"}}
+    - ID: unique modal id
+    - Title: modal title
+    - Desc: description text
+    - ConfirmName: name the user must type to confirm
+    - Action: htmx action URL
+    - Method: hx-delete / hx-post (default: hx-delete)
+*/}}
+<div x-data="{ open: false, input: '' }" x-cloak>
+    <!-- Trigger slot: use @click to open -->
+    <button @click="open = true; input = ''"
+            type="button"
+            class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">
+        Delete
+    </button>
+
+    <!-- Modal Backdrop -->
+    <div x-show="open" class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <!-- Overlay -->
+            <div x-show="open"
+                 x-transition:enter="ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="open = false"
+                 class="fixed inset-0 bg-black/60"></div>
+
+            <!-- Panel -->
+            <div x-show="open"
+                 x-transition:enter="ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="relative w-full max-w-md rounded-lg bg-slate-800 p-6 shadow-xl">
+
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10">
+                    <svg class="h-6 w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                    </svg>
+                </div>
+
+                <h3 class="mt-4 text-center text-lg font-semibold text-slate-100">{{.Title}}</h3>
+                <p class="mt-2 text-center text-sm text-slate-400">{{.Desc}}</p>
+
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-slate-300">
+                        输入 <span class="font-mono font-bold text-slate-100">{{.ConfirmName}}</span> 以确认
+                    </label>
+                    <input x-model="input" type="text"
+                           class="mt-1 block w-full rounded-md border-0 bg-slate-900 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                           placeholder="输入名称以确认">
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button @click="open = false" type="button"
+                            class="rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-700/50">
+                        取消
+                    </button>
+                    <button :disabled="input !== '{{.ConfirmName}}'"
+                            :class="input !== '{{.ConfirmName}}' ? 'bg-red-900/50 text-red-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 text-white'"
+                            {{if eq .Method "post"}}
+                            hx-post="{{.Action}}"
+                            {{else}}
+                            hx-delete="{{.Action}}"
+                            {{end}}
+                            hx-confirm=""
+                            @htmx:after-request="open = false"
+                            type="button"
+                            class="rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm">
+                        确认删除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

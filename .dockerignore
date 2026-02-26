@@ -1,0 +1,7 @@
+.git
+.env
+*.md
+data/
+prometheus/
+docker-compose.yaml
+Dockerfile

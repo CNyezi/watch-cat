@@ -1,0 +1,273 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-100">
+            {{if .IsEdit}}编辑计划{{else}}新建计划{{end}}
+        </h1>
+        <p class="mt-1 text-sm text-slate-400">
+            {{if .IsEdit}}修改检测计划配置。{{else}}创建新的检测计划来监控您的系统。{{end}}
+        </p>
+    </div>
+
+    <!-- Form -->
+    <form {{if .IsEdit}}
+              hx-patch="/plans/{{.Plan.ID}}"
+          {{else}}
+              hx-post="/plans"
+          {{end}}
+          hx-target="body"
+          hx-push-url="true"
+          class="space-y-8"
+          x-data="planForm()"
+>
+
+        <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+            <div class="p-6 space-y-6">
+
+                <!-- Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-slate-300">
+                        计划名称 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" id="name" required
+                           value="{{if .Plan}}{{.Plan.Name}}{{end}}"
+                           placeholder="例如：API 健康检查"
+                           class="mt-2 block w-full rounded-md border-0 py-1.5 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="description" class="block text-sm font-medium text-slate-300">描述</label>
+                    <textarea name="description" id="description" rows="3"
+                              placeholder="描述此计划的监控内容..."
+                              class="mt-2 block w-full rounded-md border-0 py-1.5 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">{{if .Plan}}{{.Plan.Description}}{{end}}</textarea>
+                </div>
+
+                <!-- Cron Expression -->
+                <div>
+                    <label for="cron" class="block text-sm font-medium text-slate-300">
+                        Cron 表达式 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="mt-2 flex gap-3">
+                        <input type="text" name="cron" id="cron" required
+                               x-model="cron"
+                               @input="validateCron()"
+                               value="{{if .Plan}}{{.Plan.Cron}}{{end}}"
+                               placeholder="*/5 * * * *"
+                               class="block w-full rounded-md border-0 py-1.5 font-mono bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                    </div>
+                    <!-- Cron validation hint -->
+                    <div class="mt-2 space-y-1">
+                        <p x-show="cronError" x-text="cronError" class="text-xs text-rose-400"></p>
+                        <p x-show="cronDesc && !cronError" x-text="cronDesc" class="text-xs text-green-600"></p>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button type="button" @click="cron = '0 */5 * * * *'; validateCron()" class="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-600">每 5 分钟</button>
+                            <button type="button" @click="cron = '0 */15 * * * *'; validateCron()" class="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-600">每 15 分钟</button>
+                            <button type="button" @click="cron = '0 0 * * * *'; validateCron()" class="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-600">每小时</button>
+                            <button type="button" @click="cron = '0 0 0 * * *'; validateCron()" class="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-600">每天午夜</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeout -->
+                <div>
+                    <label for="timeout" class="block text-sm font-medium text-slate-300">超时时间（秒）</label>
+                    <input type="number" name="timeout" id="timeout" min="1" max="3600"
+                           value="{{if .Plan}}{{.Plan.Timeout}}{{else}}30{{end}}"
+                           class="mt-2 block w-32 rounded-md border-0 py-1.5 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                    <p class="mt-1 text-xs text-slate-400">计划执行的最大时间，超时将被标记为超时状态（1-3600）</p>
+                </div>
+
+                <!-- Detail Log Threshold -->
+                <div>
+                    <label for="detail_log_threshold" class="block text-sm font-medium text-slate-300">详情日志阈值（秒）</label>
+                    <input type="number" name="detail_log_threshold" id="detail_log_threshold" min="0" max="3600"
+                           value="{{if .Plan}}{{.Plan.DetailLogThreshold}}{{else}}0{{end}}"
+                           class="mt-2 block w-32 rounded-md border-0 py-1.5 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                    <p class="mt-1 text-xs text-slate-400">成功执行且耗时低于此阈值时，只记录摘要信息。0 = 始终记录完整详情</p>
+                </div>
+
+                <!-- Variables -->
+                <div>
+                    <div class="flex items-center justify-between">
+                        <label class="block text-sm font-medium text-slate-300">变量</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400" x-text="rawMode ? '原始 JSON' : '结构化'"></span>
+                            <button type="button" @click="toggleMode()"
+                                    class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+                                    :class="rawMode ? 'bg-indigo-600' : 'bg-slate-600'">
+                                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                      :class="rawMode ? 'translate-x-4' : 'translate-x-0'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Structured Mode -->
+                    <div x-show="!rawMode" class="mt-2 space-y-2">
+                        <template x-for="(v, i) in vars" :key="i">
+                            <div class="flex items-center gap-2">
+                                <input x-model="v.key" type="text" placeholder="变量名"
+                                       class="block w-1/3 rounded-md border-0 py-1.5 text-sm bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                                <input x-model="v.value" type="text" placeholder="值"
+                                       class="block flex-1 rounded-md border-0 py-1.5 text-sm bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                                <button @click="vars.splice(i, 1)" type="button"
+                                        class="rounded p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+                        <button @click="vars.push({key:'', value:''})" type="button"
+                                class="inline-flex items-center rounded-md bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-300 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-600">
+                            <svg class="-ml-0.5 mr-1 h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                            </svg>
+                            添加变量
+                        </button>
+                    </div>
+
+                    <!-- Raw JSON Mode -->
+                    <div x-show="rawMode" class="mt-2">
+                        <textarea x-model="rawJSON" rows="6" data-cm="json" data-cm-min="150px" data-cm-max="300px"
+                                  x-init="$nextTick(() => window.__cmEnhance && window.__cmEnhance($el))"
+                                  x-effect="rawJSON; $nextTick(() => window.__cmSync && window.__cmSync($el))"
+                                  placeholder='{"key": "value"}'
+                                  class="block w-full rounded-md border-0 py-1.5 font-mono text-sm bg-slate-800 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500"></textarea>
+                        <p x-show="jsonError" x-text="jsonError" class="mt-1 text-xs text-rose-400"></p>
+                    </div>
+
+                    <!-- Hidden input for form submission -->
+                    <input type="hidden" name="variables" :value="getVariablesJSON()">
+                </div>
+
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end gap-3 border-t border-slate-700 bg-slate-800/50 px-6 py-4 rounded-b-lg">
+                <a href="/plans"
+                   class="rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-600">
+                    取消
+                </a>
+                <button type="submit"
+                        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                    {{if .IsEdit}}保存更改{{else}}创建计划{{end}}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{{if .Plan}}
+<script type="application/json" id="plan-init-data">
+{"variables": {{.Plan.VariablesJSON | safeJS}}, "cron": "{{.Plan.Cron}}", "name": "{{.Plan.Name}}"}
+</script>
+{{end}}
+
+<script>
+function planForm() {
+    var initVars = [];
+    var initRaw = '{}';
+    var initCron = '';
+    var initData = document.getElementById('plan-init-data');
+    if (initData) {
+        try {
+            var data = JSON.parse(initData.textContent);
+            initCron = data.cron || '';
+            var parsed = data.variables || {};
+            for (var k in parsed) {
+                if (parsed.hasOwnProperty(k)) {
+                    initVars.push({key: k, value: String(parsed[k])});
+                }
+            }
+            initRaw = JSON.stringify(parsed, null, 2);
+        } catch(e) {}
+    }
+
+    return {
+        cron: initCron,
+        cronError: '',
+        cronDesc: '',
+        vars: initVars,
+        rawMode: false,
+        rawJSON: initRaw,
+        jsonError: '',
+
+        validateCron: function() {
+            var parts = this.cron.trim().split(/\s+/);
+            if (parts.length < 5 || parts.length > 6) {
+                this.cronError = 'Cron 表达式必须包含 5 个字段（分 时 日 月 周）';
+                this.cronDesc = '';
+                return;
+            }
+            this.cronError = '';
+            // Simple human-readable descriptions for common patterns
+            var desc = '';
+            var expr = this.cron.trim();
+            if (expr.match(/^\*\/(\d+) \* \* \* \*$/)) {
+                desc = '每 ' + RegExp.$1 + ' 分钟执行一次';
+            } else if (expr === '0 * * * *') {
+                desc = '每小时整点执行';
+            } else if (expr === '0 0 * * *') {
+                desc = '每天午夜执行';
+            } else if (expr.match(/^(\d+) (\d+) \* \* \*$/)) {
+                desc = '每天 ' + RegExp.$2.padStart(2, '0') + ':' + RegExp.$1.padStart(2, '0') + ' 执行';
+            } else {
+                desc = '有效的 Cron 表达式（' + parts.length + ' 个字段）';
+            }
+            this.cronDesc = desc;
+        },
+
+        toggleMode: function() {
+            if (this.rawMode) {
+                // Switching to structured mode: parse JSON
+                try {
+                    var parsed = JSON.parse(this.rawJSON);
+                    this.vars = [];
+                    for (var k in parsed) {
+                        if (parsed.hasOwnProperty(k)) {
+                            this.vars.push({key: k, value: String(parsed[k])});
+                        }
+                    }
+                    this.jsonError = '';
+                } catch(e) {
+                    this.jsonError = '无效的 JSON：' + e.message;
+                    return;
+                }
+            } else {
+                // Switching to raw mode: serialize vars
+                var obj = {};
+                for (var i = 0; i < this.vars.length; i++) {
+                    var v = this.vars[i];
+                    if (v.key.trim()) {
+                        obj[v.key.trim()] = v.value;
+                    }
+                }
+                this.rawJSON = JSON.stringify(obj, null, 2);
+            }
+            this.rawMode = !this.rawMode;
+        },
+
+        getVariablesJSON: function() {
+            if (this.rawMode) {
+                try {
+                    JSON.parse(this.rawJSON);
+                    return this.rawJSON;
+                } catch(e) {
+                    return '{}';
+                }
+            }
+            var obj = {};
+            for (var i = 0; i < this.vars.length; i++) {
+                var v = this.vars[i];
+                if (v.key.trim()) {
+                    obj[v.key.trim()] = v.value;
+                }
+            }
+            return JSON.stringify(obj);
+        }
+    };
+}
+</script>
+{{end}}

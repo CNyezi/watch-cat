@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - WatchCat 监控平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full bg-slate-900 flex items-center justify-center">
+    <div class="w-full max-w-sm mx-4">
+        <!-- Logo -->
+        <div class="flex items-center justify-center gap-2 mb-8">
+            <svg class="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/>
+            </svg>
+            <span class="text-xl font-semibold text-white">WatchCat</span>
+        </div>
+
+        <!-- 登录卡片 -->
+        <div class="rounded-lg bg-slate-800 border border-slate-700 p-6">
+            <h2 class="text-lg font-semibold text-white mb-6 text-center">登录</h2>
+
+            {{if .Error}}
+            <div class="mb-4 rounded-md bg-red-900/50 border border-red-700 px-4 py-3 text-sm text-red-300">
+                {{.Error}}
+            </div>
+            {{end}}
+
+            <form method="POST" action="/login" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-slate-300 mb-1">用户名</label>
+                    <input type="text" id="username" name="username" required autofocus
+                           class="w-full rounded-md bg-slate-700 border border-slate-600 px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-300 mb-1">密码</label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full rounded-md bg-slate-700 border border-slate-600 px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <button type="submit"
+                        class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-800 transition-colors">
+                    登录
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

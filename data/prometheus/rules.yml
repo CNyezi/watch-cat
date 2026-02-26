@@ -1,0 +1,95 @@
+groups:
+  - name: watchcat_alerts
+    rules:
+      - alert: PlanDown
+        expr: watchcat_plan_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Plan {{ $labels.plan_id }} ({{ $labels.plan_name }}) 持续失败"
+          description: "Plan {{ $labels.plan_id }} 已连续 5 分钟处于失败状态。"
+
+      - alert: PlanLowSuccessRate
+        expr: |
+          (
+            rate(watchcat_plan_executions_total{result="success"}[15m])
+            /
+            rate(watchcat_plan_executions_total[15m])
+          ) < 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Plan {{ $labels.plan_id }} 成功率低于 90%"
+          description: "Plan {{ $labels.plan_id }} 过去 15 分钟成功率为 {{ $value | humanizePercentage }}。"
+
+      - alert: PlanHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(watchcat_plan_duration_seconds_bucket[15m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Plan {{ $labels.plan_id }} P95 延迟超过 10 秒"
+          description: "Plan {{ $labels.plan_id }} P95 延迟为 {{ $value | humanizeDuration }}。"
+
+      - alert: PlanNoExecution
+        expr: |
+          rate(watchcat_plan_executions_total[30m]) == 0
+          and
+          watchcat_plan_info{enabled="true"} == 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Plan {{ $labels.plan_id }} 已启用但无执行"
+          description: "Plan {{ $labels.plan_id }} 已启用但过去 30 分钟没有任何执行记录。"
+
+      - alert: StepHttp5xxSpike
+        expr: |
+          (
+            rate(watchcat_step_http_responses_total{status_class="5xx"}[10m])
+            /
+            rate(watchcat_step_http_responses_total[10m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Plan {{ $labels.plan_id }} Step {{ $labels.step }} 5xx 比例异常"
+          description: "步骤 {{ $labels.step }} 的 5xx 响应比例为 {{ $value | humanizePercentage }}，超过 10% 阈值。"
+
+      - alert: PlansRunningHigh
+        expr: watchcat_plans_running > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "并发运行 Plan 数过高"
+          description: "当前有 {{ $value }} 个 Plan 正在并发执行，超过阈值 10。"
+
+      - alert: WsConnectionFailed
+        expr: watchcat_step_ws_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Plan {{ $labels.plan_id }} WebSocket 连接失败"
+          description: "Plan {{ $labels.plan_id }} 步骤 {{ $labels.step }} 的 WebSocket 连接已持续失败 5 分钟。"
+
+  - name: watchcat_recording
+    rules:
+      - record: watchcat:plan_success_rate:5m
+        expr: |
+          rate(watchcat_plan_executions_total{result="success"}[5m])
+          /
+          rate(watchcat_plan_executions_total[5m])
+
+      - record: watchcat:plan_duration_seconds:p95_5m
+        expr: |
+          histogram_quantile(0.95,
+            rate(watchcat_plan_duration_seconds_bucket[5m])
+          )

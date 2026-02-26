@@ -1,0 +1,135 @@
+{{define "plan_row"}}
+<tr class="hover:bg-slate-700/50 htmx-indicator:opacity-50 transition-opacity">
+    <!-- 名称 -->
+    <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6">
+        <a href="/plans/{{.Plan.ID}}" class="text-sm font-medium text-indigo-400 hover:text-indigo-300">
+            {{.Plan.Name}}
+        </a>
+        {{if .Plan.Description}}
+        <p class="mt-0.5 text-xs text-slate-400 truncate max-w-xs">{{.Plan.Description}}</p>
+        {{end}}
+    </td>
+
+    <!-- 定时表达式 -->
+    <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-400">
+        <code class="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-mono text-slate-200">{{.Plan.Cron}}</code>
+    </td>
+
+    <!-- 超时 -->
+    <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-400">
+        {{.Plan.Timeout}}s
+    </td>
+
+    <!-- 启用开关 -->
+    <td class="whitespace-nowrap px-3 py-4 text-center">
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox"
+                   {{if .Plan.Enabled}}checked{{end}}
+                   hx-patch="/plans/{{.Plan.ID}}/toggle"
+                   hx-target="closest tr"
+                   hx-swap="outerHTML"
+                   hx-indicator="closest tr"
+                   class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+        </label>
+    </td>
+
+    <!-- 最近执行状态 -->
+    <td class="whitespace-nowrap px-3 py-4 text-sm">
+        {{if .UptimeEntries}}
+        <div class="flex items-center gap-2">
+            {{template "uptime_bar" dict "Entries" .UptimeEntries "Mode" "recent" "PlanID" .Plan.ID "Compact" true}}
+            {{template "status_badge" dict "Status" .Plan.LastRunStatus}}
+        </div>
+        {{else if .Plan.LastRunStatus}}
+        {{template "status_badge" dict "Status" .Plan.LastRunStatus}}
+        {{else}}
+        <span class="text-xs text-slate-500">从未执行</span>
+        {{end}}
+    </td>
+
+    <!-- 操作 -->
+    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+        <div class="flex items-center justify-end gap-2">
+            <!-- 编辑 -->
+            <a href="/plans/{{.Plan.ID}}"
+               class="rounded p-1 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10"
+               title="编辑">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/>
+                </svg>
+            </a>
+
+            <!-- 克隆 -->
+            <button hx-post="/plans/{{.Plan.ID}}/clone"
+                    hx-target="#plan-list tbody"
+                    hx-swap="afterbegin"
+                    class="rounded p-1 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10"
+                    title="克隆">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5"/>
+                </svg>
+            </button>
+
+            <!-- 删除 -->
+            <div x-data="{ open: false, input: '', planName: '' }" data-plan-name="{{.Plan.Name}}">
+                <button @click="planName = $el.closest('[data-plan-name]').dataset.planName; open = true; input = ''"
+                        type="button"
+                        class="rounded p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
+                        title="删除">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                    </svg>
+                </button>
+
+                <!-- Inline Delete Modal -->
+                <div x-show="open" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+                    <div class="flex min-h-full items-center justify-center p-4">
+                        <div x-show="open"
+                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                             @click="open = false"
+                             class="fixed inset-0 bg-black/60"></div>
+                        <div x-show="open"
+                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                             class="relative w-full max-w-md rounded-lg bg-slate-800 p-6 shadow-xl">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10">
+                                <svg class="h-6 w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                                </svg>
+                            </div>
+                            <h3 class="mt-4 text-center text-lg font-semibold text-slate-100">删除计划</h3>
+                            <p class="mt-2 text-center text-sm text-slate-400">此操作无法撤销。所有关联的步骤和执行历史将被永久删除。</p>
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-slate-300">
+                                    输入 <span class="font-mono font-bold text-slate-100" x-text="planName"></span> 以确认
+                                </label>
+                                <input x-model="input" type="text"
+                                       class="mt-1 block w-full rounded-md border-slate-600 bg-slate-800 text-slate-100 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                       placeholder="输入计划名称以确认">
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button @click="open = false" type="button"
+                                        class="rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-700/50">
+                                    取消
+                                </button>
+                                <button :disabled="input !== planName"
+                                        :class="input !== planName ? 'bg-red-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500'"
+                                        hx-delete="/plans/{{.Plan.ID}}"
+                                        hx-target="closest tr"
+                                        hx-swap="outerHTML swap:300ms"
+                                        @htmx:after-request="open = false"
+                                        type="button"
+                                        class="rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm">
+                                    确认删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </td>
+</tr>
+{{end}}

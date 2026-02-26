@@ -1,0 +1,93 @@
+<div class="space-y-4">
+    <!-- Pre Scripts -->
+    <div class="rounded-lg border border-slate-700 bg-slate-800">
+        <div class="px-4 py-3 border-b border-slate-700">
+            <h4 class="text-xs font-semibold text-slate-300">Pre 脚本</h4>
+        </div>
+        <div class="divide-y divide-slate-700">
+            {{$preCount := 0}}
+            {{range .StepScripts}}
+            {{if eq .Script.Phase "pre"}}
+            {{$preCount = 1}}
+            <div class="flex items-center justify-between px-4 py-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-xs font-mono text-slate-500">{{.Seq}}</span>
+                    <span class="text-sm text-slate-200 truncate">{{.Script.Name}}</span>
+                </div>
+                <button hx-delete="/steps/{{$.StepID}}/scripts/{{.Script.ID}}"
+                        hx-target="#step-scripts-{{.StepID}}"
+                        hx-swap="outerHTML"
+                        type="button"
+                        class="ml-2 shrink-0 rounded p-0.5 text-slate-500 hover:text-rose-400">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            {{end}}
+            {{end}}
+            {{if eq $preCount 0}}
+            <div class="px-4 py-3 text-xs text-slate-500">无</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Post Scripts -->
+    <div class="rounded-lg border border-slate-700 bg-slate-800">
+        <div class="px-4 py-3 border-b border-slate-700">
+            <h4 class="text-xs font-semibold text-slate-300">Post 脚本</h4>
+        </div>
+        <div class="divide-y divide-slate-700">
+            {{$postCount := 0}}
+            {{range .StepScripts}}
+            {{if eq .Script.Phase "post"}}
+            {{$postCount = 1}}
+            <div class="flex items-center justify-between px-4 py-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-xs font-mono text-slate-500">{{.Seq}}</span>
+                    <span class="text-sm text-slate-200 truncate">{{.Script.Name}}</span>
+                </div>
+                <button hx-delete="/steps/{{$.StepID}}/scripts/{{.Script.ID}}"
+                        hx-target="#step-scripts-{{.StepID}}"
+                        hx-swap="outerHTML"
+                        type="button"
+                        class="ml-2 shrink-0 rounded p-0.5 text-slate-500 hover:text-rose-400">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            {{end}}
+            {{end}}
+            {{if eq $postCount 0}}
+            <div class="px-4 py-3 text-xs text-slate-500">无</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Bind New Script -->
+    <form hx-post="/steps/{{.StepID}}/scripts"
+          hx-target="#step-scripts-{{.StepID}}"
+          hx-swap="outerHTML"
+          class="flex items-end gap-3 flex-wrap">
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">绑定脚本</label>
+            <select name="script_id" required
+                    class="rounded border-slate-600 bg-slate-800 py-1 text-sm text-slate-100 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">-- 选择 --</option>
+                {{range .AllScripts}}
+                <option value="{{.ID}}">[{{.Phase}}] {{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">顺序</label>
+            <input type="number" name="seq" value="0" min="0"
+                   class="w-16 rounded border-slate-600 bg-slate-800 py-1 text-sm text-slate-100 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <button type="submit"
+                class="rounded bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-indigo-500">
+            绑定
+        </button>
+    </form>
+</div>

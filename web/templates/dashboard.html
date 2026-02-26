@@ -1,0 +1,205 @@
+{{define "dashboard_stats"}}
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <!-- Running -->
+    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700 p-5 border-t-2 border-indigo-500">
+        <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10">
+                <svg class="h-5 w-5 text-indigo-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-slate-100">{{.Running}}</p>
+                <p class="text-xs text-slate-400">运行中</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success -->
+    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700 p-5 border-t-2 border-emerald-500">
+        <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-slate-100">{{.Success}}</p>
+                <p class="text-xs text-slate-400">成功 (24h)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Failed -->
+    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700 p-5 border-t-2 border-rose-500">
+        <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10">
+                <svg class="h-5 w-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-slate-100 {{if gt .Failed 0}}text-rose-400{{end}}">{{.Failed}}</p>
+                <p class="text-xs text-slate-400">失败 (24h)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disabled -->
+    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700 p-5 border-t-2 border-slate-600">
+        <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-700">
+                <svg class="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-slate-100">{{.Disabled}}</p>
+                <p class="text-xs text-slate-400">已禁用</p>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{define "dashboard_failures"}}
+<div class="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+    <h3 class="text-sm font-semibold text-slate-100">最近失败</h3>
+    <a href="/errors" class="text-xs text-indigo-400 hover:text-indigo-300">查看全部</a>
+</div>
+
+{{if .Failures}}
+<ul class="divide-y divide-slate-700">
+    {{range .Failures}}
+    <li x-data="{ expanded: false, loaded: false }" class="transition-colors">
+        <div class="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-rose-500/5"
+             @click="expanded = !expanded; if (!loaded) { loaded = true; htmx.ajax('GET', '/plans/{{.PlanID}}/logs/{{.LogID}}', {target: '#dash-detail-{{.LogID}}', swap: 'innerHTML'}) }">
+            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10 shrink-0">
+                <svg class="h-4 w-4 text-slate-400 transition-transform" :class="expanded && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium text-slate-100 truncate">{{.PlanName}}</p>
+                <p class="text-xs text-rose-400 truncate">{{.Error}}</p>
+            </div>
+            <div class="shrink-0 text-right">
+                <p class="text-xs text-slate-400">{{.StartedAt.Format "15:04:05"}}</p>
+                {{template "status_badge" dict "Status" .Status}}
+            </div>
+        </div>
+        <div x-show="expanded" x-cloak class="px-5 pb-3">
+            <div id="dash-detail-{{.LogID}}" class="rounded-md bg-slate-800/50 p-3">
+                <div class="flex items-center justify-center py-3">
+                    <svg class="h-4 w-4 animate-spin text-slate-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span class="ml-2 text-xs text-slate-400">加载详情...</span>
+                </div>
+            </div>
+        </div>
+    </li>
+    {{end}}
+</ul>
+{{else}}
+<div class="flex flex-col items-center justify-center py-10 text-center">
+    <svg class="h-8 w-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <p class="mt-2 text-sm text-slate-400">暂无最近失败</p>
+</div>
+{{end}}
+{{end}}
+
+{{define "dashboard_trend"}}
+{{if .Trend}}
+<div class="space-y-2">
+    {{range .Trend}}
+    <div class="flex items-center gap-3">
+        <span class="w-14 text-xs font-mono text-slate-400 shrink-0">{{.Time}}</span>
+        <div class="flex-1 h-5 bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full rounded-full {{if ge .Rate 90.0}}bg-emerald-400{{else if ge .Rate 70.0}}bg-amber-400{{else}}bg-rose-400{{end}} transition-all"
+                 style="width: {{.Rate}}%"></div>
+        </div>
+        <span class="w-12 text-xs font-semibold text-right shrink-0 {{if ge .Rate 90.0}}text-emerald-400{{else if ge .Rate 70.0}}text-amber-400{{else}}text-rose-400{{end}}">{{printf "%.0f" .Rate}}%</span>
+    </div>
+    {{end}}
+</div>
+{{else}}
+<div class="text-center py-6">
+    <p class="text-sm text-slate-500">该时间范围内暂无数据</p>
+</div>
+{{end}}
+{{end}}
+
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-100">仪表盘</h1>
+        <p class="mt-1 text-sm text-slate-400">所有检测计划活动概览</p>
+    </div>
+
+    <!-- Stats Cards (auto-refresh) -->
+    <div id="dashboard-stats"
+         hx-get="/dashboard/stats"
+         hx-trigger="every 10s"
+         hx-target="this"
+         hx-swap="innerHTML">
+        {{template "dashboard_stats" .Stats}}
+    </div>
+
+    <!-- Uptime Bars -->
+    <div id="dashboard-uptime">
+        {{template "uptime_section" dict "Bars" .UptimeBars "Mode" .UptimeMode}}
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- Failed Plans List -->
+        <div class="lg:col-span-2">
+            <div id="dashboard-failures"
+                 hx-get="/dashboard/failures"
+                 hx-trigger="every 10s"
+                 hx-target="this"
+                 hx-swap="innerHTML"
+                 class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+                {{template "dashboard_failures" .}}
+            </div>
+        </div>
+
+        <!-- Success Rate Trend -->
+        <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+            <div class="px-5 py-4 border-b border-slate-700" x-data="{ range: '{{.TimeRange}}' }">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-slate-100">成功率</h3>
+                    <div class="flex rounded-md shadow-sm">
+                        <button @click="range='1h'"
+                                :class="range === '1h' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700/50'"
+                                class="rounded-l-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-slate-600"
+                                hx-get="/dashboard/trend?range=1h"
+                                hx-target="#trend-data"
+                                hx-swap="innerHTML">1h</button>
+                        <button @click="range='6h'"
+                                :class="range === '6h' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700/50'"
+                                class="px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-slate-600 -ml-px"
+                                hx-get="/dashboard/trend?range=6h"
+                                hx-target="#trend-data"
+                                hx-swap="innerHTML">6h</button>
+                        <button @click="range='24h'"
+                                :class="range === '24h' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700/50'"
+                                class="rounded-r-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-slate-600 -ml-px"
+                                hx-get="/dashboard/trend?range=24h"
+                                hx-target="#trend-data"
+                                hx-swap="innerHTML">24h</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="trend-data" class="p-5">
+                {{template "dashboard_trend" .Stats}}
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

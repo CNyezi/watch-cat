@@ -1,0 +1,79 @@
+{{/*
+    Steps list - loaded into the "Steps" tab of plan detail page.
+    Data: .PlanID, .Steps []Step
+*/}}
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-semibold text-slate-100">步骤编排</h3>
+    <button hx-get="/plans/{{.PlanID}}/steps/create"
+            hx-target="#step-form-container"
+            hx-swap="innerHTML"
+            class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+        <svg class="-ml-0.5 mr-1.5 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+        </svg>
+        添加步骤
+    </button>
+</div>
+
+<!-- Step Form Container (for inline create/edit) -->
+<div id="step-form-container"></div>
+
+<!-- Step Cards (sortable) -->
+{{if .Steps}}
+<div id="step-list" class="sortable space-y-3" data-plan-id="{{.PlanID}}">
+    {{range .Steps}}
+    {{template "step_card" .}}
+    {{end}}
+</div>
+{{else}}
+<div id="step-list" class="sortable" data-plan-id="{{.PlanID}}">
+    {{template "empty_state" dict "Icon" "inbox" "Title" "尚未配置步骤" "Desc" "添加步骤以定义检测工作流。"}}
+</div>
+{{end}}
+
+<!-- SortableJS Initialization -->
+<script>
+(function() {
+    function initSortable() {
+        var el = document.getElementById('step-list');
+        if (!el || !window.Sortable) return;
+        if (el._sortable) el._sortable.destroy();
+
+        var planId = el.dataset.planId;
+        el._sortable = new Sortable(el, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'opacity-30',
+            chosenClass: 'shadow-lg',
+            dragClass: 'rotate-1',
+            onEnd: function(evt) {
+                if (evt.oldIndex === evt.newIndex) return;
+
+                var ids = Array.from(el.children)
+                    .filter(function(c) { return c.dataset.stepId; })
+                    .map(function(c) { return c.dataset.stepId; });
+
+                el._sortable.option('disabled', true);
+
+                htmx.ajax('POST', '/plans/' + planId + '/steps/reorder', {
+                    target: '#step-list',
+                    swap: 'outerHTML',
+                    values: { ids: JSON.stringify(ids) }
+                });
+            }
+        });
+    }
+
+    // Init on first load
+    initSortable();
+
+    // Re-init after htmx swaps
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target && (evt.detail.target.id === 'step-list' || evt.detail.target.closest('#step-list'))) {
+            setTimeout(initSortable, 50);
+        }
+    });
+})();
+</script>

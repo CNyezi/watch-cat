@@ -1,0 +1,57 @@
+{{define "uptime_section"}}
+<div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+    <div class="px-5 py-4 border-b border-slate-700" x-data="{ mode: '{{.Mode}}' }">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-slate-100">状态总览</h3>
+            <div class="flex rounded-md shadow-sm">
+                <button @click="mode='recent'"
+                        :class="mode === 'recent' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700/50'"
+                        class="rounded-l-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-slate-600"
+                        hx-get="/dashboard/uptime?mode=recent"
+                        hx-target="#dashboard-uptime"
+                        hx-swap="innerHTML">最近30次</button>
+                <button @click="mode='24h'"
+                        :class="mode === '24h' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700/50'"
+                        class="px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-slate-600 -ml-px"
+                        hx-get="/dashboard/uptime?mode=24h"
+                        hx-target="#dashboard-uptime"
+                        hx-swap="innerHTML">24h</button>
+                <button @click="mode='7d'"
+                        :class="mode === '7d' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700/50'"
+                        class="rounded-r-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-slate-600 -ml-px"
+                        hx-get="/dashboard/uptime?mode=7d"
+                        hx-target="#dashboard-uptime"
+                        hx-swap="innerHTML">7d</button>
+            </div>
+        </div>
+    </div>
+
+    {{if .Bars}}
+    <div class="divide-y divide-slate-700/50">
+        {{range .Bars}}
+        <div class="flex items-center gap-4 px-5 py-3 hover:bg-slate-700/30 transition-colors">
+            <a href="/plans/{{.PlanID}}" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 w-32 truncate shrink-0">
+                {{.PlanName}}
+            </a>
+            <div class="flex-1">
+                {{template "uptime_bar" dict "Entries" .Entries "Buckets" .Buckets "Mode" .Mode "PlanID" .PlanID "Compact" false}}
+            </div>
+            <span class="text-xs font-semibold tabular-nums w-12 text-right shrink-0
+                         {{if ge .SuccessRate 90.0}}text-emerald-400
+                         {{else if ge .SuccessRate 70.0}}text-amber-400
+                         {{else}}text-rose-400{{end}}">
+                {{printf "%.0f" .SuccessRate}}%
+            </span>
+        </div>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="flex flex-col items-center justify-center py-8 text-center">
+        <svg class="h-8 w-8 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/>
+        </svg>
+        <p class="mt-2 text-sm text-slate-500">暂无启用的计划</p>
+    </div>
+    {{end}}
+</div>
+{{end}}

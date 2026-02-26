@@ -1,0 +1,104 @@
+{{define "step_card"}}
+<div class="group rounded-lg bg-slate-800 shadow ring-1 ring-slate-700 hover:ring-slate-600 transition-all"
+     data-step-id="{{.ID}}">
+    <div class="flex items-center gap-3 px-4 py-3">
+
+        <!-- 拖拽手柄 -->
+        <div class="drag-handle cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 shrink-0">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7 4a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zM7 10a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2zM7 16a1 1 0 110-2 1 1 0 010 2zm6 0a1 1 0 110-2 1 1 0 010 2z"/>
+            </svg>
+        </div>
+
+        <!-- 步骤序号 -->
+        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-300 shrink-0">
+            {{.Seq}}
+        </span>
+
+        <!-- 类型标签 -->
+        {{if eq .Type "http"}}
+        <span class="inline-flex items-center gap-1 rounded-md bg-blue-900/40 px-2 py-1 text-xs font-medium text-blue-300 ring-1 ring-inset ring-blue-500/30">
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582"/>
+            </svg>
+            HTTP
+        </span>
+        {{else if eq .Type "ws"}}
+        <span class="inline-flex items-center gap-1 rounded-md bg-green-900/40 px-2 py-1 text-xs font-medium text-green-300 ring-1 ring-inset ring-green-500/30">
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>
+            </svg>
+            WS
+        </span>
+        {{else if eq .Type "delay"}}
+        <span class="inline-flex items-center gap-1 rounded-md bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300 ring-1 ring-inset ring-slate-500/30">
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+            </svg>
+            延迟
+        </span>
+        {{end}}
+
+        <!-- 步骤名称 + 配置摘要 -->
+        <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-slate-100 truncate">{{.Name}}</p>
+            <p class="text-xs text-slate-400 truncate">
+                {{if eq .Type "http"}}
+                <span class="font-mono font-semibold">{{.ConfigSummary.Method}}</span> {{.ConfigSummary.URL}}
+                {{else if eq .Type "ws"}}
+                {{.ConfigSummary.URL}}
+                {{else if eq .Type "delay"}}
+                {{.ConfigSummary.Duration}}
+                {{end}}
+            </p>
+        </div>
+
+        <!-- 操作 -->
+        <div class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            {{if eq .Type "http"}}
+            <!-- 脚本 -->
+            <button hx-get="/steps/{{.ID}}/scripts"
+                    hx-target="#step-scripts-{{.ID}}"
+                    hx-swap="innerHTML"
+                    @click="$el.closest('[data-step-id]').querySelector('.step-scripts-panel').classList.toggle('hidden')"
+                    class="rounded p-1.5 text-slate-500 hover:text-purple-400 hover:bg-purple-900/40"
+                    title="脚本">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/>
+                </svg>
+            </button>
+            {{end}}
+            <!-- 编辑 -->
+            <button hx-get="/plans/{{.PlanID}}/steps/{{.ID}}/edit"
+                    hx-target="#step-form-container"
+                    hx-swap="innerHTML"
+                    class="rounded p-1.5 text-slate-500 hover:text-blue-400 hover:bg-blue-900/40"
+                    title="编辑">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/>
+                </svg>
+            </button>
+            <!-- 删除 -->
+            <button hx-delete="/plans/{{.PlanID}}/steps/{{.ID}}"
+                    hx-target="closest [data-step-id]"
+                    hx-swap="outerHTML swap:200ms"
+                    hx-confirm="确定删除步骤 '{{.Name}}'？此操作无法撤销。"
+                    class="rounded p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-900/40"
+                    title="删除">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 步骤脚本面板（默认隐藏，点击脚本按钮展开） -->
+    {{if eq .Type "http"}}
+    <div class="step-scripts-panel hidden border-t border-slate-700 px-4 py-3 bg-slate-900/50">
+        <div id="step-scripts-{{.ID}}">
+            <p class="text-xs text-slate-500">点击上方脚本按钮加载...</p>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}

@@ -1,0 +1,32 @@
+{{define "uptime_bar"}}
+{{/*
+    Uptime bar component.
+    Params: Entries []StatusEntry, Buckets []BucketEntry, Mode string, PlanID uuid, Compact bool, SuccessRate float64
+*/}}
+<div class="flex items-center gap-2">
+    <div class="flex items-center gap-px">
+        {{if eq .Mode "recent"}}
+            {{range .Entries}}
+            <a href="/plans/{{$.PlanID}}/logs/{{.ID}}"
+               class="block {{if $.Compact}}w-1.5 h-4{{else}}w-2 h-5{{end}} rounded-sm transition-opacity hover:opacity-80
+                      {{if eq .Status "success"}}bg-emerald-500
+                      {{else if eq .Status "failed"}}bg-rose-500
+                      {{else if eq .Status "timeout"}}bg-amber-500
+                      {{else}}bg-slate-600{{end}}"
+               title="{{.CreatedAt.Format "01-02 15:04:05"}} · {{if eq .Status "success"}}成功{{else if eq .Status "failed"}}失败{{else if eq .Status "timeout"}}超时{{else}}未知{{end}}{{if .Error}} · {{.Error}}{{end}}">
+            </a>
+            {{end}}
+        {{else}}
+            {{range .Buckets}}
+            <div class="{{if $.Compact}}w-1.5 h-4{{else}}w-2 h-5{{end}} rounded-sm
+                        {{if eq .Total 0}}bg-slate-600
+                        {{else if ge .Rate 1.0}}bg-emerald-500
+                        {{else if gt .Rate 0.0}}bg-amber-500
+                        {{else}}bg-rose-500{{end}}"
+                 title="{{.BucketStart.Format "01-02 15:04"}} · {{.SuccessCount}}/{{.Total}} 成功">
+            </div>
+            {{end}}
+        {{end}}
+    </div>
+</div>
+{{end}}

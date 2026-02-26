@@ -1,0 +1,109 @@
+<div id="scripts-tab-content" class="space-y-6">
+    <!-- Pre Scripts -->
+    <div class="rounded-lg bg-slate-800 ring-1 ring-slate-700">
+        <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-slate-100">Pre 脚本（发送请求前执行）</h3>
+        </div>
+        <div class="divide-y divide-slate-700">
+            {{$preCount := 0}}
+            {{range .PlanScripts}}
+            {{if eq .Script.Phase "pre"}}
+            {{$preCount = 1}}
+            <div class="flex items-center justify-between px-6 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="inline-flex items-center rounded bg-slate-700 px-1.5 py-0.5 text-xs font-mono text-slate-300">seq:{{.Seq}}</span>
+                    <a href="/scripts/{{.Script.ID}}" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 truncate">{{.Script.Name}}</a>
+                    {{if .Script.Description}}
+                    <span class="text-xs text-slate-500 truncate">{{.Script.Description}}</span>
+                    {{end}}
+                </div>
+                <button hx-delete="/plans/{{$.PlanID}}/scripts/{{.Script.ID}}"
+                        hx-target="#scripts-tab-content"
+                        hx-swap="outerHTML"
+                        hx-confirm="确定要从此 Plan 移除该脚本吗？"
+                        type="button"
+                        class="ml-4 shrink-0 rounded p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            {{end}}
+            {{end}}
+            {{if eq $preCount 0}}
+            <div class="px-6 py-6 text-center text-sm text-slate-500">暂无 Pre 脚本</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Post Scripts -->
+    <div class="rounded-lg bg-slate-800 ring-1 ring-slate-700">
+        <div class="px-6 py-4 border-b border-slate-700">
+            <h3 class="text-sm font-semibold text-slate-100">Post 脚本（收到响应后执行）</h3>
+        </div>
+        <div class="divide-y divide-slate-700">
+            {{$postCount := 0}}
+            {{range .PlanScripts}}
+            {{if eq .Script.Phase "post"}}
+            {{$postCount = 1}}
+            <div class="flex items-center justify-between px-6 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="inline-flex items-center rounded bg-slate-700 px-1.5 py-0.5 text-xs font-mono text-slate-300">seq:{{.Seq}}</span>
+                    <a href="/scripts/{{.Script.ID}}" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 truncate">{{.Script.Name}}</a>
+                    {{if .Script.Description}}
+                    <span class="text-xs text-slate-500 truncate">{{.Script.Description}}</span>
+                    {{end}}
+                </div>
+                <button hx-delete="/plans/{{$.PlanID}}/scripts/{{.Script.ID}}"
+                        hx-target="#scripts-tab-content"
+                        hx-swap="outerHTML"
+                        hx-confirm="确定要从此 Plan 移除该脚本吗？"
+                        type="button"
+                        class="ml-4 shrink-0 rounded p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            {{end}}
+            {{end}}
+            {{if eq $postCount 0}}
+            <div class="px-6 py-6 text-center text-sm text-slate-500">暂无 Post 脚本</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Bind New Script -->
+    <div class="rounded-lg bg-slate-800 ring-1 ring-slate-700">
+        <div class="px-6 py-4 border-b border-slate-700">
+            <h3 class="text-sm font-semibold text-slate-100">绑定脚本</h3>
+        </div>
+        <form hx-post="/plans/{{.PlanID}}/scripts"
+              hx-target="#scripts-tab-content"
+              hx-swap="outerHTML"
+              class="px-6 py-4 flex items-end gap-4 flex-wrap">
+            <div>
+                <label for="bind-script-id" class="block text-xs font-medium text-slate-300 mb-1">选择脚本</label>
+                <select name="script_id" id="bind-script-id" required
+                        class="rounded-md border-0 py-1.5 text-sm text-slate-100 bg-slate-800 shadow-sm ring-1 ring-inset ring-slate-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                    <option value="">-- 请选择 --</option>
+                    {{range .AllScripts}}
+                    <option value="{{.ID}}">[{{.Phase}}] {{.Name}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div>
+                <label for="bind-seq" class="block text-xs font-medium text-slate-300 mb-1">执行顺序</label>
+                <input type="number" name="seq" id="bind-seq" value="0" min="0"
+                       class="w-20 rounded-md border-0 py-1.5 text-sm text-slate-100 bg-slate-800 shadow-sm ring-1 ring-inset ring-slate-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+            </div>
+            <button type="submit"
+                    class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                绑定
+            </button>
+        </form>
+        {{if not .AllScripts}}
+        <p class="px-6 pb-4 text-xs text-slate-500">暂无可用脚本，<a href="/scripts/create" class="text-indigo-400 hover:underline">点击创建</a></p>
+        {{end}}
+    </div>
+</div>

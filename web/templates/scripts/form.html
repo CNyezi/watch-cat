@@ -1,0 +1,91 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-100">
+            {{if .IsEdit}}编辑脚本{{else}}新建脚本{{end}}
+        </h1>
+        <p class="mt-1 text-sm text-slate-400">
+            {{if .IsEdit}}修改脚本配置和代码。{{else}}创建 Pre 或 Post 请求处理脚本。{{end}}
+        </p>
+    </div>
+
+    <!-- Form -->
+    <form {{if .IsEdit}}
+              hx-patch="/scripts/{{.Script.ID}}"
+          {{else}}
+              hx-post="/scripts"
+          {{end}}
+          hx-target="body"
+          hx-push-url="true"
+          class="space-y-6">
+
+        <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+            <div class="p-6 space-y-6">
+
+                <!-- Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-slate-100">
+                        脚本名称 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" id="name" required
+                           value="{{if .Script}}{{.Script.Name}}{{end}}"
+                           placeholder="例如：签名注入"
+                           class="mt-2 block w-full rounded-md border-0 py-1.5 text-slate-100 bg-slate-800 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="description" class="block text-sm font-medium text-slate-100">描述</label>
+                    <textarea name="description" id="description" rows="2"
+                              placeholder="简要描述脚本用途..."
+                              class="mt-2 block w-full rounded-md border-0 py-1.5 text-slate-100 bg-slate-800 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">{{if .Script}}{{.Script.Description}}{{end}}</textarea>
+                </div>
+
+                <!-- Phase -->
+                <div>
+                    <label for="phase" class="block text-sm font-medium text-slate-100">
+                        执行阶段 <span class="text-red-500">*</span>
+                    </label>
+                    <select name="phase" id="phase" required
+                            class="mt-2 block w-48 rounded-md border-0 py-1.5 text-slate-100 bg-slate-800 shadow-sm ring-1 ring-inset ring-slate-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                        <option value="pre" {{if and .Script (eq .Script.Phase "pre")}}selected{{end}}>Pre（发送请求前）</option>
+                        <option value="post" {{if and .Script (eq .Script.Phase "post")}}selected{{end}}>Post（收到响应后）</option>
+                    </select>
+                    <p class="mt-1 text-xs text-slate-400">Pre 脚本可修改请求（URL/Header/Body）；Post 脚本可读取响应并更新变量</p>
+                </div>
+
+                <!-- Code -->
+                <div>
+                    <label for="code" class="block text-sm font-medium text-slate-100">
+                        脚本代码 <span class="text-red-500">*</span>
+                    </label>
+                    <p class="mt-0.5 text-xs text-slate-400">JavaScript 代码，可访问 <code class="font-mono bg-slate-700 px-1 rounded">ctx.vars</code>、<code class="font-mono bg-slate-700 px-1 rounded">ctx.request</code>、<code class="font-mono bg-slate-700 px-1 rounded">ctx.response</code> 和 <code class="font-mono bg-slate-700 px-1 rounded">crypto</code> 模块</p>
+                    <textarea name="code" rows="16" data-cm="javascript" data-cm-min="300px" data-cm-max="600px"
+                              class="mt-2 block w-full rounded-md border-0 py-1.5 font-mono text-sm text-slate-100 bg-slate-800 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 leading-relaxed">{{if .Script}}{{.Script.Code}}{{end}}</textarea>
+                    <div class="mt-2 rounded-md bg-slate-800/50 p-3 text-xs text-slate-400 space-y-1">
+                        <p class="font-medium text-slate-300">可用 API：</p>
+                        <p><code class="font-mono">ctx.vars.key</code> — 读写计划变量</p>
+                        <p><code class="font-mono">ctx.request.{method,url,headers,body}</code> — 读写请求（Pre 阶段）</p>
+                        <p><code class="font-mono">ctx.response.{status,headers,body}</code> — 读取响应（Post 阶段）</p>
+                        <p><code class="font-mono">crypto.sha1/md5/sha256/hmacSha256/base64Encode/base64Decode</code></p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end gap-3 border-t border-slate-700 bg-slate-800/50 px-6 py-4 rounded-b-lg">
+                <a href="/scripts"
+                   class="rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-700/50">
+                    取消
+                </a>
+                <button type="submit"
+                        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                    {{if .IsEdit}}保存更改{{else}}创建脚本{{end}}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

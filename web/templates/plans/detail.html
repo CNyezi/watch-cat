@@ -1,0 +1,493 @@
+{{define "content"}}
+<div x-data="planDetail()" class="space-y-6">
+
+    <!-- Plan Header -->
+    <div class="sm:flex sm:items-start sm:justify-between">
+        <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-slate-100 truncate">{{.Plan.Name}}</h1>
+                {{if .Plan.Enabled}}
+                <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">已启用</span>
+                {{else}}
+                <span class="inline-flex items-center rounded-full bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-400 ring-1 ring-inset ring-slate-600">已禁用</span>
+                {{end}}
+            </div>
+            <div class="mt-1 flex items-center gap-4 text-sm text-slate-400">
+                <span class="inline-flex items-center gap-1">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                    </svg>
+                    <code class="font-mono text-xs">{{.Plan.Cron}}</code>
+                </span>
+                <span class="inline-flex items-center gap-1">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Z"/>
+                    </svg>
+                    {{.StepCount}} 个步骤
+                </span>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center gap-2 sm:mt-0 sm:ml-4">
+            <button @click="executeNow()"
+                    :disabled="executing"
+                    :class="executing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500'"
+                    class="inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm">
+                <svg class="mr-1.5 h-4 w-4" :class="executing && 'animate-spin'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path x-show="!executing" stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/>
+                    <path x-show="executing" stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"/>
+                </svg>
+                <span x-text="executing ? '执行中...' : '立即执行'"></span>
+            </button>
+            <a href="/plans/{{.Plan.ID}}/edit"
+               class="inline-flex items-center rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-600">
+                <svg class="mr-1.5 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/>
+                </svg>
+                编辑
+            </a>
+            <!-- Delete Button with Confirm Modal -->
+            <div x-data="{ open: false, input: '', planName: '' }" data-plan-name="{{.Plan.Name}}">
+                <button @click="planName = $el.closest('[data-plan-name]').dataset.planName; open = true; input = ''" type="button"
+                        class="inline-flex items-center rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-rose-400 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-rose-500/10">
+                    <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                    </svg>
+                    删除
+                </button>
+                <div x-show="open" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+                    <div class="flex min-h-full items-center justify-center p-4">
+                        <div x-show="open"
+                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                             @click="open = false" class="fixed inset-0 bg-black/60"></div>
+                        <div x-show="open"
+                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                             class="relative w-full max-w-md rounded-lg bg-slate-800 p-6 shadow-xl">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10">
+                                <svg class="h-6 w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                                </svg>
+                            </div>
+                            <h3 class="mt-4 text-center text-lg font-semibold text-slate-100">删除计划</h3>
+                            <p class="mt-2 text-center text-sm text-slate-400">此操作无法撤销。所有步骤和执行历史将被永久删除。</p>
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-slate-300">
+                                    输入 <span class="font-mono font-bold text-slate-100" x-text="planName"></span> 以确认
+                                </label>
+                                <input x-model="input" type="text"
+                                       class="mt-1 block w-full rounded-md border-0 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 text-sm focus:ring-2 focus:ring-inset focus:ring-indigo-500 placeholder:text-slate-500"
+                                       placeholder="输入计划名称以确认">
+                            </div>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button @click="open = false" type="button"
+                                        class="rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-600">取消</button>
+                                <button :disabled="input !== planName"
+                                        :class="input !== planName ? 'bg-red-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500'"
+                                        hx-delete="/plans/{{.Plan.ID}}"
+                                        hx-target="body"
+                                        hx-push-url="/plans"
+                                        type="button"
+                                        class="rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm">确认删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SSE Execution Progress Panel -->
+    <div x-show="executing" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-2"
+         class="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="h-5 w-5 animate-spin text-indigo-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span class="text-sm font-medium text-indigo-300">正在执行中...</span>
+            </div>
+            <button @click="executing = false" class="text-indigo-400 hover:text-indigo-300">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div id="exec-progress" class="mt-3">
+            <!-- SSE execution progress content filled by T28 -->
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="border-b border-slate-700">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <button @click="activeTab = 'overview'"
+                    :class="activeTab === 'overview' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'"
+                    class="whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors">
+                概览
+            </button>
+            <button @click="activeTab = 'steps'"
+                    :class="activeTab === 'steps' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'"
+                    class="whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors">
+                步骤
+                <span class="ml-1 rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-300">{{.StepCount}}</span>
+            </button>
+            <button @click="activeTab = 'logs'"
+                    :class="activeTab === 'logs' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'"
+                    class="whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors">
+                执行日志
+            </button>
+            <button @click="activeTab = 'scripts'"
+                    :class="activeTab === 'scripts' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'"
+                    class="whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors">
+                脚本
+            </button>
+            <button @click="activeTab = 'settings'"
+                    :class="activeTab === 'settings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'"
+                    class="whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors">
+                设置
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div>
+        <!-- Overview Tab (directly rendered) -->
+        <div x-show="activeTab === 'overview'">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <!-- Plan Info Card -->
+                <div class="lg:col-span-2 rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-700">
+                        <h3 class="text-sm font-semibold text-slate-100">计划详情</h3>
+                    </div>
+                    <dl class="divide-y divide-slate-700">
+                        <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                            <dt class="text-sm font-medium text-slate-400">描述</dt>
+                            <dd class="mt-1 text-sm text-slate-100 sm:col-span-2 sm:mt-0">
+                                {{if .Plan.Description}}{{.Plan.Description}}{{else}}<span class="text-slate-500 italic">暂无描述</span>{{end}}
+                            </dd>
+                        </div>
+                        <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                            <dt class="text-sm font-medium text-slate-400">Cron 调度</dt>
+                            <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
+                                <code class="rounded bg-slate-700 px-2 py-0.5 font-mono text-xs text-slate-200">{{.Plan.Cron}}</code>
+                            </dd>
+                        </div>
+                        <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                            <dt class="text-sm font-medium text-slate-400">超时时间</dt>
+                            <dd class="mt-1 text-sm text-slate-100 sm:col-span-2 sm:mt-0">{{.Plan.Timeout}} 秒</dd>
+                        </div>
+                        <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                            <dt class="text-sm font-medium text-slate-400">变量</dt>
+                            <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
+                                {{if .Plan.Variables}}
+                                <div class="space-y-1">
+                                    {{range $k, $v := .Plan.VariablesMap}}
+                                    <div class="flex items-center gap-2">
+                                        <code class="rounded bg-indigo-500/10 px-1.5 py-0.5 text-xs font-mono text-indigo-300">{{$k}}</code>
+                                        <span class="text-slate-500">=</span>
+                                        <span class="text-sm text-slate-300">{{$v}}</span>
+                                    </div>
+                                    {{end}}
+                                </div>
+                                {{else}}
+                                <span class="text-slate-500 italic">暂无变量定义</span>
+                                {{end}}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <!-- Stats Sidebar -->
+                <div class="space-y-6">
+                    <!-- Step Count Card -->
+                    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700 p-6">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10">
+                                <svg class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold text-slate-100">{{.StepCount}}</p>
+                                <p class="text-xs text-slate-400">总步骤数</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700 p-6">
+                        <h4 class="text-sm font-semibold text-slate-100 mb-3">快捷操作</h4>
+                        <div class="space-y-2">
+                            <button @click="activeTab = 'steps'"
+                                    class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50">
+                                <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                                </svg>
+                                管理步骤
+                            </button>
+                            <button @click="activeTab = 'logs'"
+                                    class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50">
+                                <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
+                                </svg>
+                                查看日志
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Execution Logs -->
+            <div class="mt-6 rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+                <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-slate-100">最近执行记录</h3>
+                    <button @click="activeTab = 'logs'" class="text-xs text-indigo-400 hover:text-indigo-300">查看全部</button>
+                </div>
+                {{if .RecentLogs}}
+                <table class="min-w-full divide-y divide-slate-700">
+                    <thead class="bg-slate-800/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">状态</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">开始时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">耗时</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">触发方式</th>
+                        </tr>
+                    </thead>
+                        {{range .RecentLogs}}
+                        <tbody x-data="{ expanded: false, loaded: false }" class="divide-y divide-slate-700">
+                        <tr class="hover:bg-slate-700/50 cursor-pointer"
+                            @click="expanded = !expanded; if (!loaded) { loaded = true; htmx.ajax('GET', '/plans/{{$.Plan.ID}}/logs/{{.ID}}', {target: '#detail-log-{{.ID}}', swap: 'innerHTML'}) }">
+                            <td class="px-6 py-3">
+                                <div class="flex items-center gap-2">
+                                    <svg class="h-4 w-4 text-slate-500 transition-transform" :class="expanded && 'rotate-90'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                                    </svg>
+                                    {{template "status_badge" dict "Status" .Status}}
+                                </div>
+                            </td>
+                            <td class="px-6 py-3 text-sm text-slate-400">{{.StartedAt.Format "2006-01-02 15:04:05"}}</td>
+                            <td class="px-6 py-3 text-sm text-slate-400">{{.Duration}}</td>
+                            <td class="px-6 py-3 text-sm text-slate-400">{{.Trigger}}</td>
+                        </tr>
+                        <tr x-show="expanded" x-cloak>
+                            <td colspan="4" class="px-6 py-4 bg-slate-800/50">
+                                <div id="detail-log-{{.ID}}">
+                                    <div class="flex items-center justify-center py-4">
+                                        <svg class="h-5 w-5 animate-spin text-slate-500" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        <span class="ml-2 text-sm text-slate-400">加载详情...</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                        {{end}}
+                </table>
+                {{else}}
+                <div class="px-6 py-10 text-center">
+                    <p class="text-sm text-slate-400">暂无执行记录。点击"立即执行"来运行此计划。</p>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Steps Tab (lazy loaded) -->
+        <div x-show="activeTab === 'steps'" x-cloak>
+            <div id="steps-tab-content"
+                 hx-get="/plans/{{.Plan.ID}}/steps"
+                 hx-trigger="intersect once"
+                 hx-target="this"
+                 hx-swap="innerHTML">
+                <div class="flex items-center justify-center py-12">
+                    <svg class="h-6 w-6 animate-spin text-slate-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span class="ml-2 text-sm text-slate-400">加载步骤中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab (lazy loaded) -->
+        <div x-show="activeTab === 'logs'" x-cloak>
+            <div id="logs-tab-content"
+                 hx-get="/plans/{{.Plan.ID}}/logs"
+                 hx-trigger="intersect once"
+                 hx-target="this"
+                 hx-swap="innerHTML">
+                <div class="flex items-center justify-center py-12">
+                    <svg class="h-6 w-6 animate-spin text-slate-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span class="ml-2 text-sm text-slate-400">加载执行日志中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scripts Tab (lazy loaded) -->
+        <div x-show="activeTab === 'scripts'" x-cloak>
+            <div id="scripts-tab-content"
+                 hx-get="/plans/{{.Plan.ID}}/scripts"
+                 hx-trigger="intersect once"
+                 hx-target="this"
+                 hx-swap="outerHTML">
+                <div class="flex items-center justify-center py-12">
+                    <svg class="h-6 w-6 animate-spin text-slate-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span class="ml-2 text-sm text-slate-400">加载脚本中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div x-show="activeTab === 'settings'" x-cloak>
+            <div class="space-y-6">
+                <!-- Inline Edit Form -->
+                <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+                    <div class="px-6 py-4 border-b border-slate-700">
+                        <h3 class="text-sm font-semibold text-slate-100">计划配置</h3>
+                    </div>
+                    <form hx-patch="/plans/{{.Plan.ID}}"
+                          hx-target="body"
+                          hx-swap="outerHTML"
+                          class="p-6 space-y-5">
+
+                        <div>
+                            <label for="settings-name" class="block text-sm font-medium text-slate-300">计划名称 <span class="text-red-500">*</span></label>
+                            <input type="text" name="name" id="settings-name" required
+                                   value="{{.Plan.Name}}"
+                                   class="mt-2 block w-full rounded-md border-0 py-1.5 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                        </div>
+
+                        <div>
+                            <label for="settings-desc" class="block text-sm font-medium text-slate-300">描述</label>
+                            <textarea name="description" id="settings-desc" rows="3"
+                                      class="mt-2 block w-full rounded-md border-0 py-1.5 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">{{.Plan.Description}}</textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                            <div>
+                                <label for="settings-cron" class="block text-sm font-medium text-slate-300">Cron 表达式 <span class="text-red-500">*</span></label>
+                                <input type="text" name="cron" id="settings-cron" required
+                                       value="{{.Plan.Cron}}"
+                                       class="mt-2 block w-full rounded-md border-0 py-1.5 font-mono bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                            </div>
+                            <div>
+                                <label for="settings-timeout" class="block text-sm font-medium text-slate-300">超时时间（秒）</label>
+                                <input type="number" name="timeout" id="settings-timeout" min="1" max="3600"
+                                       value="{{.Plan.Timeout}}"
+                                       class="mt-2 block w-32 rounded-md border-0 py-1.5 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button type="submit"
+                                    class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                                保存更改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="rounded-lg border-2 border-rose-500/30 bg-rose-500/5">
+                    <div class="px-6 py-4 border-b border-rose-500/30 rounded-t-lg">
+                        <h3 class="text-sm font-semibold text-rose-300">危险区域</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-slate-100">删除此计划</p>
+                                <p class="mt-1 text-xs text-slate-400">删除后，所有步骤和执行历史将被永久移除。</p>
+                            </div>
+                            <div x-data="{ open: false, input: '', planName: '' }" data-plan-name="{{.Plan.Name}}">
+                                <button @click="planName = $el.closest('[data-plan-name]').dataset.planName; open = true; input = ''" type="button"
+                                        class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">
+                                    删除计划
+                                </button>
+                                <div x-show="open" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+                                    <div class="flex min-h-full items-center justify-center p-4">
+                                        <div x-show="open"
+                                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                             @click="open = false" class="fixed inset-0 bg-black/60"></div>
+                                        <div x-show="open"
+                                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                                             class="relative w-full max-w-md rounded-lg bg-slate-800 p-6 shadow-xl">
+                                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10">
+                                                <svg class="h-6 w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                                                </svg>
+                                            </div>
+                                            <h3 class="mt-4 text-center text-lg font-semibold text-slate-100">删除计划</h3>
+                                            <p class="mt-2 text-center text-sm text-slate-400">这将永久删除 <strong class="text-slate-200" x-text="planName"></strong> 及其所有关联数据。</p>
+                                            <div class="mt-4">
+                                                <label class="block text-sm font-medium text-slate-300">
+                                                    输入 <span class="font-mono font-bold text-slate-100" x-text="planName"></span> 以确认
+                                                </label>
+                                                <input x-model="input" type="text"
+                                                       class="mt-1 block w-full rounded-md border-0 bg-slate-700 text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 text-sm focus:ring-2 focus:ring-inset focus:ring-indigo-500 placeholder:text-slate-500"
+                                                       placeholder="输入计划名称以确认">
+                                            </div>
+                                            <div class="mt-6 flex justify-end gap-3">
+                                                <button @click="open = false" type="button"
+                                                        class="rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-600">取消</button>
+                                                <button :disabled="input !== planName"
+                                                        :class="input !== planName ? 'bg-red-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500'"
+                                                        hx-delete="/plans/{{.Plan.ID}}"
+                                                        hx-target="body"
+                                                        hx-push-url="/plans"
+                                                        type="button"
+                                                        class="rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm">确认删除</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function planDetail() {
+    return {
+        activeTab: 'overview',
+        executing: false,
+
+        executeNow: function() {
+            this.executing = true;
+            var self = this;
+            htmx.ajax('POST', '/plans/{{.Plan.ID}}/exec', {
+                target: '#exec-progress',
+                swap: 'innerHTML'
+            }).then(function() {
+                // SSE connection will handle further updates (T28)
+            }).catch(function() {
+                self.executing = false;
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: '启动执行失败', type: 'error' }
+                }));
+            });
+        }
+    };
+}
+</script>
+{{end}}

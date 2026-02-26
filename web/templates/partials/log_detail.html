@@ -1,0 +1,64 @@
+{{define "log_detail"}}
+{{/*
+    Execution log detail - step waterfall view.
+    Data: .Log (ExecLog with StepResults)
+*/}}
+<div class="space-y-3">
+    <div class="flex items-center justify-between">
+        <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400">步骤执行瀑布图</h4>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-500">总计: {{.Log.Duration}}</span>
+            {{if .Log.ParsedStepResults}}
+            <button type="button"
+                    data-json="{{.Log.StepResultsPrettyJSON}}"
+                    @click="$dispatch('show-json', { title: 'step_results', json: $el.dataset.json })"
+                    class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-slate-400 ring-1 ring-slate-600 hover:bg-slate-700 hover:text-slate-200 transition-colors">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/>
+                </svg>
+                JSON
+            </button>
+            {{end}}
+        </div>
+    </div>
+
+    {{if .Log.ParsedStepResults}}
+    <div class="space-y-1.5">
+        {{range .Log.ParsedStepResults}}
+        <div class="flex items-center gap-3 rounded-md px-3 py-2 {{if eq .Status "failed"}}bg-rose-500/5 ring-1 ring-rose-500/20{{else if eq .Status "timeout"}}bg-amber-500/5 ring-1 ring-amber-500/20{{else}}bg-slate-800 ring-1 ring-slate-700{{end}}">
+            <!-- Step Name + Type -->
+            <div class="w-40 shrink-0">
+                <p class="text-sm font-medium text-slate-100 truncate">{{.StepName}}</p>
+                <span class="text-xs text-slate-400">{{.StepType}}</span>
+            </div>
+
+            <!-- Status Badge -->
+            <div class="w-20 shrink-0">
+                {{template "status_badge" dict "Status" .Status}}
+            </div>
+
+            <!-- Duration Bar -->
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 h-4 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all {{if eq .Status "success"}}bg-emerald-500{{else if eq .Status "failed"}}bg-rose-500{{else if eq .Status "timeout"}}bg-amber-500{{else}}bg-indigo-500{{end}}"
+                             style="width: {{.DurationPercent}}%"></div>
+                    </div>
+                    <span class="text-xs font-mono text-slate-400 w-16 text-right shrink-0">{{.Duration}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 失败步骤的错误信息 -->
+        {{if and (eq .Status "failed") .Error}}
+        <div class="ml-4 rounded-md bg-rose-500/5 border border-rose-500/20 px-3 py-2">
+            <pre class="text-xs text-rose-400 whitespace-pre-wrap break-words font-mono">{{.Error}}</pre>
+        </div>
+        {{end}}
+        {{end}}
+    </div>
+    {{else}}
+    <p class="text-sm text-slate-500 italic py-2">暂无步骤执行结果。</p>
+    {{end}}
+</div>
+{{end}}

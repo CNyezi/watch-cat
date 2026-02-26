@@ -1,0 +1,124 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="sm:flex sm:items-start sm:justify-between">
+        <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-slate-100 truncate">{{.Script.Name}}</h1>
+                {{if eq .Script.Phase "pre"}}
+                <span class="inline-flex items-center rounded-full bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-400 ring-1 ring-inset ring-indigo-500/20">Pre</span>
+                {{else}}
+                <span class="inline-flex items-center rounded-full bg-purple-500/10 px-2.5 py-1 text-xs font-medium text-purple-400 ring-1 ring-inset ring-purple-500/20">Post</span>
+                {{end}}
+            </div>
+            {{if .Script.Description}}
+            <p class="mt-1 text-sm text-slate-400">{{.Script.Description}}</p>
+            {{end}}
+            <div class="mt-2 flex items-center gap-4 text-sm text-slate-400">
+                <span>被 {{.PlanCount}} 个 Plan 使用</span>
+                <span>被 {{.StepCount}} 个 Step 使用</span>
+                <span>更新于 {{.Script.UpdatedAt.Format "2006-01-02 15:04"}}</span>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center gap-2 sm:mt-0 sm:ml-4">
+            <a href="/scripts/{{.Script.ID}}/edit"
+               class="inline-flex items-center rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-700/50">
+                <svg class="mr-1.5 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/>
+                </svg>
+                编辑
+            </a>
+            <div x-data="{ open: false }">
+                <button @click="open = true" type="button"
+                        class="inline-flex items-center rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-red-400 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-rose-500/10">
+                    <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                    </svg>
+                    删除
+                </button>
+                <!-- Delete Confirm Modal -->
+                <div x-show="open" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+                    <div class="flex min-h-full items-center justify-center p-4">
+                        <div x-show="open"
+                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                             @click="open = false" class="fixed inset-0 bg-black/60"></div>
+                        <div x-show="open"
+                             x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                             class="relative w-full max-w-md rounded-lg bg-slate-800 p-6 shadow-xl">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10">
+                                <svg class="h-6 w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                                </svg>
+                            </div>
+                            <h3 class="mt-4 text-center text-lg font-semibold text-slate-100">删除脚本</h3>
+                            {{if or .PlanCount .StepCount}}
+                            <p class="mt-2 text-center text-sm text-slate-400">
+                                该脚本被 <strong>{{.PlanCount}}</strong> 个 Plan、<strong>{{.StepCount}}</strong> 个 Step 引用，仍要强制删除？
+                            </p>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button @click="open = false" type="button"
+                                        class="rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-700/50">取消</button>
+                                <button hx-delete="/scripts/{{.Script.ID}}?force=true"
+                                        hx-target="body"
+                                        hx-push-url="/scripts"
+                                        type="button"
+                                        class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">强制删除</button>
+                            </div>
+                            {{else}}
+                            <p class="mt-2 text-center text-sm text-slate-400">此操作无法撤销。</p>
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button @click="open = false" type="button"
+                                        class="rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm ring-1 ring-inset ring-slate-600 hover:bg-slate-700/50">取消</button>
+                                <button hx-delete="/scripts/{{.Script.ID}}"
+                                        hx-target="body"
+                                        hx-push-url="/scripts"
+                                        type="button"
+                                        class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">确认删除</button>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Info Card -->
+    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+        <div class="px-6 py-4 border-b border-slate-700">
+            <h3 class="text-sm font-semibold text-slate-100">脚本代码</h3>
+        </div>
+        <div class="p-4">
+            <pre data-cm-viewer="javascript" data-cm-max="500px"
+                 class="rounded-lg bg-slate-900 border border-slate-700 p-4 text-sm text-slate-200 font-mono whitespace-pre-wrap overflow-x-auto">{{.Script.Code}}</pre>
+        </div>
+    </div>
+
+    <!-- Usage Info -->
+    <div class="rounded-lg bg-slate-800 shadow ring-1 ring-slate-700">
+        <div class="px-6 py-4 border-b border-slate-700">
+            <h3 class="text-sm font-semibold text-slate-100">引用统计</h3>
+        </div>
+        <dl class="divide-y divide-slate-700">
+            <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-slate-400">被 Plan 引用</dt>
+                <dd class="mt-1 text-sm text-slate-100 sm:col-span-2 sm:mt-0">{{.PlanCount}} 个</dd>
+            </div>
+            <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-slate-400">被 Step 引用</dt>
+                <dd class="mt-1 text-sm text-slate-100 sm:col-span-2 sm:mt-0">{{.StepCount}} 个</dd>
+            </div>
+            <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-slate-400">创建时间</dt>
+                <dd class="mt-1 text-sm text-slate-100 sm:col-span-2 sm:mt-0">{{.Script.CreatedAt.Format "2006-01-02 15:04:05"}}</dd>
+            </div>
+            <div class="px-6 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-slate-400">最后更新</dt>
+                <dd class="mt-1 text-sm text-slate-100 sm:col-span-2 sm:mt-0">{{.Script.UpdatedAt.Format "2006-01-02 15:04:05"}}</dd>
+            </div>
+        </dl>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,29 @@
+server:
+  port: 3003
+  host: "0.0.0.0"
+
+database:
+  uri: "postgres://postgres:S40f5TG4sPxhIlb9OFu3gDi6inqtJAe5BCLuoiRVVfrwNEOU5jJ2TVLx71suzLUy@192.168.0.251:5432/watchcat?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 300  # seconds
+
+log:
+  level: "info"
+
+metrics:
+  enabled: true
+  path: "/metrics"
+
+scheduler:
+  enabled: true
+
+log_retention:
+  days: 30  # 日志保留天数
+
+auth:
+  enabled: true
+  username: "admin"
+  password: "4MguMIvu3vb"
+  secret: "4MguMIvu3vbOn6VkP4gFtvx36L3HkqoGfeH1"
+  max_age: 604800  # 7天，单位秒
