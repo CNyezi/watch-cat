@@ -22,20 +22,6 @@
         }
     </script>
 
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
-    <script>
-        // Alpine fallback
-        setTimeout(function() {
-            if (typeof Alpine === 'undefined') {
-                var s = document.createElement('script');
-                s.src = '/static/vendor/alpine.min.js';
-                s.defer = true;
-                document.head.appendChild(s);
-            }
-        }, 0);
-    </script>
-
     <!-- SortableJS -->
     <script src="https://unpkg.com/sortablejs@1.15.6/Sortable.min.js"></script>
     <script>window.Sortable || document.write('<script src="/static/vendor/Sortable.min.js"><\/script>')</script>
@@ -221,6 +207,9 @@
         }));
     });
 </script>
+
+<!-- Alpine.js: 必须在所有组件 <script> 之后加载，确保 planDetail/toastManager 等函数已定义 -->
+<script src="/static/vendor/alpine.min.js"></script>
 
 </body>
 </html>
