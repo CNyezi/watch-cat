@@ -8,7 +8,7 @@ on:
       - 'v*'
 
 env:
-  REPOSITORY: yezi/watchcat
+  REPOSITORY: yezi/watch-cat
 
 jobs:
   build:

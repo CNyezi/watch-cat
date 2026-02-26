@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="ear-inner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbb4d0"/>
+      <stop offset="100%" style="stop-color:#f472b6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圆形背景 -->
+  <circle cx="100" cy="100" r="96" fill="url(#bg)"/>
+
+  <!-- 左耳 -->
+  <path d="M54 78 L40 36 L74 62 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+  <path d="M56 73 L46 44 L70 63 Z" fill="url(#ear-inner)"/>
+
+  <!-- 右耳 -->
+  <path d="M146 78 L160 36 L126 62 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+  <path d="M144 73 L154 44 L130 63 Z" fill="url(#ear-inner)"/>
+
+  <!-- 猫脸主体 -->
+  <ellipse cx="100" cy="108" rx="54" ry="48" fill="#f8fafc"/>
+  <ellipse cx="100" cy="110" rx="50" ry="44" fill="white"/>
+
+  <!-- 胡须（底层柔边 + 上层白芯） -->
+  <!-- 左侧 -->
+  <line x1="36" y1="102" x2="66" y2="108" stroke="#8b8fa8" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="34" y1="114" x2="65" y2="114" stroke="#8b8fa8" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="36" y1="126" x2="66" y2="120" stroke="#8b8fa8" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- 右侧 -->
+  <line x1="164" y1="102" x2="134" y2="108" stroke="#8b8fa8" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="166" y1="114" x2="135" y2="114" stroke="#8b8fa8" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="164" y1="126" x2="134" y2="120" stroke="#8b8fa8" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- 左侧白芯 -->
+  <line x1="36" y1="102" x2="66" y2="108" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="34" y1="114" x2="65" y2="114" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="36" y1="126" x2="66" y2="120" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- 右侧白芯 -->
+  <line x1="164" y1="102" x2="134" y2="108" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="166" y1="114" x2="135" y2="114" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="164" y1="126" x2="134" y2="120" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- 左眼 -->
+  <circle cx="80" cy="100" r="15" fill="#1e1b3a"/>
+  <circle cx="80" cy="100" r="10.5" fill="none" stroke="#34d399" stroke-width="0.7" opacity="0.35"/>
+  <circle cx="80" cy="100" r="6.5" fill="none" stroke="#34d399" stroke-width="0.7" opacity="0.25"/>
+  <circle cx="80" cy="100" r="5.5" fill="#34d399"/>
+  <circle cx="80" cy="100" r="3" fill="#6ee7b7"/>
+  <circle cx="76" cy="96" r="2.8" fill="white" opacity="0.85"/>
+
+  <!-- 右眼 -->
+  <circle cx="120" cy="100" r="15" fill="#1e1b3a"/>
+  <circle cx="120" cy="100" r="10.5" fill="none" stroke="#34d399" stroke-width="0.7" opacity="0.35"/>
+  <circle cx="120" cy="100" r="6.5" fill="none" stroke="#34d399" stroke-width="0.7" opacity="0.25"/>
+  <circle cx="120" cy="100" r="5.5" fill="#34d399"/>
+  <circle cx="120" cy="100" r="3" fill="#6ee7b7"/>
+  <circle cx="116" cy="96" r="2.8" fill="white" opacity="0.85"/>
+
+  <!-- 鼻子 -->
+  <ellipse cx="100" cy="115" rx="4" ry="3" fill="#f472b6"/>
+
+  <!-- 嘴巴 -->
+  <path d="M100 118 Q93 125 87 121" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M100 118 Q107 125 113 121" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- 头顶信号波 -->
+  <path d="M88 52 Q100 44 112 52" fill="none" stroke="#a5b4fc" stroke-width="2.2" stroke-linecap="round" opacity="0.8"/>
+  <path d="M82 44 Q100 34 118 44" fill="none" stroke="#a5b4fc" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+  <path d="M76 37 Q100 25 124 37" fill="none" stroke="#a5b4fc" stroke-width="1.4" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- 状态呼吸灯 -->
+  <circle cx="100" cy="150" r="4" fill="#34d399">
+    <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="100" cy="150" r="7" fill="none" stroke="#34d399" stroke-width="1" opacity="0.3">
+    <animate attributeName="r" values="7;10;7" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
