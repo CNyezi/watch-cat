@@ -3,12 +3,12 @@ name: Build and Push
 on:
   push:
     branches:
-      - main
+      - master
     tags:
       - 'v*'
 
 env:
-  REPOSITORY: yezi/watch-cat
+  REPOSITORY: holtye/watch-cat
 
 jobs:
   build:
