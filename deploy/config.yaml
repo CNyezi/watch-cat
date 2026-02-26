@@ -1,0 +1,29 @@
+server:
+  port: 3003
+  host: "0.0.0.0"
+
+database:
+  uri: "postgres://watchcat:changeme@db:5432/watchcat?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 300
+
+log:
+  level: "info"
+
+metrics:
+  enabled: true
+  path: "/metrics"
+
+scheduler:
+  enabled: true
+
+log_retention:
+  days: 30
+
+auth:
+  enabled: true
+  username: "admin"
+  password: "changeme"        # 部署前请修改
+  secret: "changeme-secret"   # 部署前请修改为随机字符串
+  max_age: 604800

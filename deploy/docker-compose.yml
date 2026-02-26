@@ -1,0 +1,35 @@
+services:
+  watchcat:
+    image: holtye/watch-cat:latest
+    container_name: watchcat
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      - TZ=Asia/Shanghai
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: watchcat-db
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: watchcat
+  #     POSTGRES_USER: watchcat
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   ports:
+  #     - "127.0.0.1:5432:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U watchcat"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
+
+volumes:
+  pgdata:
